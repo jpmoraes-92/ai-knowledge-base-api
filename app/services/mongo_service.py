@@ -19,17 +19,14 @@ class MongoService:
             "document_id": ObjectId(document_id),
             "chunk_index": chunk_index,
             "text": text,
-            "vector_id": vector_id # O Elo de Ligação com o FAISS!
+            "vector_id": vector_id 
         }
         await db.chunks.insert_one(chunk)
 
     async def get_chunks_by_vector_ids(self, vector_ids: list[int]):
-        # Busca no Mongo todos os chunks cujo vector_id esteja na lista retornada pelo FAISS
         cursor = db.chunks.find({"vector_id": {"$in": vector_ids}})
         chunks = await cursor.to_list(length=len(vector_ids))
         
-        # O FAISS retorna ordenado por relevância, mas o Mongo não garante a ordem do $in.
-        # Vamos reordenar os resultados para bater com a ordem do FAISS.
         chunk_map = {chunk["vector_id"]: chunk for chunk in chunks}
         ordered_chunks = [chunk_map[vid] for vid in vector_ids if vid in chunk_map]
         
@@ -49,17 +46,14 @@ class MongoService:
 
     async def get_document_analytics(self):
         pipeline = [
-            # 1. Separa o array de documentos usados (se uma pergunta usou 3 docs, vira 3 linhas)
             {"$unwind": "$document_ids"},
             
-            # 2. Agrupa pelo ID do documento, contando perguntas e somando tokens
             {"$group": {
                 "_id": "$document_ids",
                 "total_questions": {"$sum": 1},
                 "total_tokens": {"$sum": "$tokens_used"}
             }},
             
-            # 3. Faz um "JOIN" (lookup) com a coleção de documentos para pegar o título
             {"$lookup": {
                 "from": "documents",
                 "localField": "_id",
@@ -67,10 +61,8 @@ class MongoService:
                 "as": "doc_info"
             }},
             
-            # 4. Desfaz o array do join
             {"$unwind": "$doc_info"},
             
-            # 5. Formata a saída final limpa para o FastAPI (Pydantic)
             {"$project": {
                 "document_id": {"$toString": "$_id"},
                 "title": "$doc_info.title",
@@ -79,7 +71,6 @@ class MongoService:
                 "_id": 0
             }},
             
-            # 6. Ordena dos mais consultados para os menos
             {"$sort": {"total_questions": -1}}
         ]
         

@@ -49,18 +49,3 @@ uvicorn app.main:app --reload
 6. Acesse a documentação Swagger em: `http://localhost:8000/docs`
 
 ```
-
----
-
-### 🧭 Onde ir a partir daqui?
-
-O projeto "v1" está finalizado. Você já pode subir pro GitHub e colocar no seu currículo! 
-
-Se no futuro você quiser evoluir esse projeto para uma "v2" para aprender ainda mais, você pode:
-1. **Persistir o FAISS:** Adicionar código para salvar o índice vetorial no disco (`faiss.write_index`) para a memória não sumir ao reiniciar.
-2. **Colocar a Chave Real da OpenAI:** Para ver o LLM raciocinando de verdade sobre os seus documentos.
-3. **Adicionar PDF Parsing:** Usar a biblioteca `PyMuPDF` para ler arquivos PDF na rota de ingestão em vez de texto puro.
-
-Foi uma honra atuar como seu Tech Lead nesta jornada. Você programou muito bem. **Vai subir pro GitHub agora ou quer tirar alguma última dúvida sobre a arquitetura que criamos?**
-
-```
