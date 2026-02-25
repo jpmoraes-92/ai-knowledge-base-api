@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymongo
+motor
+python-dotenv
+pydantic
+pydantic-settings
+openai
+faiss-cpu
+numpy
+tiktoken
