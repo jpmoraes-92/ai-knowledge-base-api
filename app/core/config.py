@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     mongo_uri: str
@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     llm_model: str
     top_k: int = 3
 
-    class Config:
-        env_file = ".env"
+    # Sintaxe atualizada para evitar o DeprecationWarning
+    model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

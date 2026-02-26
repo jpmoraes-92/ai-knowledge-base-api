@@ -81,9 +81,13 @@ class IngestionService:
 
     async def process_pdf(self, title: str, file_bytes: bytes, source: str):
         try:
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            # Novo bloco de proteção para blindar o PyMuPDF
+            try:
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+            except Exception:
+                raise ValueError("O arquivo enviado está corrompido ou não é um PDF válido.")
+                
             full_text = ""
-            
             for page in doc:
                 full_text += page.get_text() + "\n"
                 
@@ -91,7 +95,6 @@ class IngestionService:
                 raise ValueError("O PDF não possui camada de texto digital. Parecem ser imagens escaneadas.")
                 
             logger.info(f"📄 PDF lido com sucesso: {len(full_text)} caracteres extraídos.")
-            
             return await self.process_document(title=title, content=full_text, source=source)
             
         except ValueError as ve:

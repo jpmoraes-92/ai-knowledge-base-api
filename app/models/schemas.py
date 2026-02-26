@@ -1,9 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import Optional
-from typing import List
+from typing import Optional, List
 
 class DocumentUploadRequest(BaseModel):
-    title: str = Field(..., description="Título do documento", example="Manual de RH")
+    title: str = Field(..., description="Título do documento", json_schema_extra={"example": "Manual de RH"})
     content: str = Field(..., min_length=10, description="O texto completo do documento")
     source: Optional[str] = Field(default="upload")
 
@@ -13,7 +12,7 @@ class DocumentUploadResponse(BaseModel):
     embedding_model: str
 
 class QuestionRequest(BaseModel):
-    question: str = Field(..., example="Quantos dias de férias eu tenho direito?")
+    question: str = Field(..., json_schema_extra={"example": "Quantos dias de férias eu tenho direito?"})
     top_k: int = Field(default=3, ge=1, le=10, description="Quantos trechos recuperar")
 
 class RetrievedChunk(BaseModel):
