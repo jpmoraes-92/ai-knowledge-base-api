@@ -32,8 +32,22 @@ class MongoService:
         
         return ordered_chunks
 
-    async def log_conversation(self, question: str, answer: str, document_ids: list[str], retrieved_chunks: list[dict], tokens_used: int, latency_ms: int):
+    # NOVO MÉTODO: Busca as últimas conversas para o Chatbot ter memória
+    async def get_recent_history(self, session_id: str, limit: int = 3):
+        if not session_id:
+            return []
+        
+        # Busca as últimas X interações dessa sessão, ordenando da mais recente para a mais antiga
+        cursor = db.conversations.find({"session_id": session_id}).sort("created_at", -1).limit(limit)
+        history = await cursor.to_list(length=limit)
+        
+        # Inverte a lista para que a ordem fique cronológica (A mais antiga primeiro) no Prompt
+        return list(reversed(history))
+
+    # ATUALIZADO: Agora aceita e salva o session_id no banco de dados
+    async def log_conversation(self, question: str, answer: str, document_ids: list[str], retrieved_chunks: list[dict], tokens_used: int, latency_ms: int, session_id: str = None):
         conversa = {
+            "session_id": session_id,
             "question": question,
             "answer": answer,
             "document_ids": [ObjectId(doc_id) for doc_id in document_ids],

@@ -7,8 +7,9 @@ class Settings(BaseSettings):
     embedding_model: str
     llm_model: str
     top_k: int = 3
+    
+    use_mock: bool = True 
 
-    # Sintaxe atualizada para evitar o DeprecationWarning
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

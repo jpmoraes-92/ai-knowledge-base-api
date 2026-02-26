@@ -14,6 +14,7 @@ class DocumentUploadResponse(BaseModel):
 class QuestionRequest(BaseModel):
     question: str = Field(..., json_schema_extra={"example": "Quantos dias de férias eu tenho direito?"})
     top_k: int = Field(default=3, ge=1, le=10, description="Quantos trechos recuperar")
+    session_id: Optional[str] = Field(default=None, description="ID da sessão para manter o histórico de conversa")
 
 class RetrievedChunk(BaseModel):
     chunk_id: str

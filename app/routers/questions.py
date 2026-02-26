@@ -8,6 +8,7 @@ router = APIRouter(prefix="/api/v1/questions", tags=["Questions & RAG"])
 async def ask_question(request: QuestionRequest):
     result = await rag_service.answer_question(
         question=request.question,
-        top_k=request.top_k
+        top_k=request.top_k,
+        session_id=request.session_id 
     )
     return result
