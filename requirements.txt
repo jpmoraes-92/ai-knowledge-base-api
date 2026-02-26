@@ -9,3 +9,8 @@ openai
 faiss-cpu
 numpy
 tiktoken
+PyMuPDF
+python-multipart
+pytest
+pytest-asyncio
+httpx

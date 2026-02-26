@@ -10,12 +10,48 @@ from app.core.config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def simple_chunker(text: str, chunk_size: int = 1000):
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+def smart_chunker(text: str, chunk_size: int = 1000, overlap: int = 150):
+    """
+    Divide o texto em pedaços com um limite de caracteres, 
+    garantindo uma sobreposição (overlap) e evitando cortar palavras ao meio.
+    """
+    chunks = []
+    start = 0
+    text_length = len(text)
+
+    while start < text_length:
+        end = start + chunk_size
+
+        # Se chegamos no final do texto, pega o resto e encerra
+        if end >= text_length:
+            chunks.append(text[start:].strip())
+            break
+
+        # Procura o último espaço vazio ANTES do limite do chunk, 
+        # para não fatiar uma palavra pela metade.
+        last_space = text.rfind(' ', start, end)
+        if last_space != -1 and last_space > start:
+            end = last_space
+
+        # Adiciona o chunk validado
+        chunks.append(text[start:end].strip())
+
+        # O INÍCIO DO PRÓXIMO CHUNK:
+        # Volta o cursor no texto baseado no tamanho do overlap
+        start = end - overlap
+        
+        # Como o overlap pode ter caído no meio de uma palavra, 
+        # avançamos até o próximo espaço vazio.
+        if start < text_length:
+            first_space = text.find(' ', start, end)
+            if first_space != -1:
+                start = first_space + 1
+
+    return [c for c in chunks if c] # Retorna removendo possíveis chunks vazios
 
 class IngestionService:
     async def process_document(self, title: str, content: str, source: str):
-        chunks = simple_chunker(content)
+        chunks = smart_chunker(content, chunk_size=1000, overlap=150)
         
         doc_id = await mongo_service.create_document(
             title=title, 
