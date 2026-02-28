@@ -5,7 +5,6 @@ class DocumentUploadRequest(BaseModel):
     title: str = Field(..., description="Título do documento", json_schema_extra={"example": "Manual de RH"})
     content: str = Field(..., min_length=10, description="O texto completo do documento")
     source: Optional[str] = Field(default="upload")
-    user_id: str = Field(..., description="ID do usuário proprietário do documento")
 
 class DocumentUploadResponse(BaseModel):
     document_id: str
@@ -17,7 +16,6 @@ class QuestionRequest(BaseModel):
     question: str = Field(..., json_schema_extra={"example": "Quantos dias de férias eu tenho direito?"})
     top_k: int = Field(default=3, ge=1, le=10, description="Quantos trechos recuperar")
     session_id: Optional[str] = Field(default=None, description="ID da sessão para manter o histórico de conversa")
-    user_id: str = Field(..., description="ID do usuário fazendo a pergunta")
 
 class RetrievedChunk(BaseModel):
     chunk_id: str
@@ -53,3 +51,14 @@ class TokenResponse(BaseModel):
     token_type: str = Field(default="bearer", description="Tipo de token")
     user_id: str = Field(..., description="ID do usuário autenticado")
     expires_in: int = Field(..., description="Tempo de expiração em segundos")
+
+# ============ Background Tasks Schemas ============
+
+class DocumentTaskResponse(BaseModel):
+    task_id: str = Field(..., description="ID da tarefa em background")
+    message: str = Field(..., description="Mensagem de status")
+    status: str = Field(..., description="Status atual (ex: Queued, Processing, Completed)")
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str

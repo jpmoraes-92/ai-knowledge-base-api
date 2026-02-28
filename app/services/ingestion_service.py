@@ -50,58 +50,49 @@ def smart_chunker(text: str, chunk_size: int = 1000, overlap: int = 150):
     return [c for c in chunks if c] # Retorna removendo possíveis chunks vazios
 
 class IngestionService:
-    async def process_document(self, title: str, content: str, source: str):
+    async def process_document(self, title: str, content: str, source: str, user_id: str):
         chunks = smart_chunker(content, chunk_size=1000, overlap=150)
         
         doc_id = await mongo_service.create_document(
             title=title, 
             source=source, 
             total_chunks=len(chunks), 
-            embedding_model=settings.embedding_model
+            embedding_model=settings.embedding_model,
+            user_id=user_id # Passando para o Mongo
         )
         
         try:
             embeddings = await openai_service.get_embeddings(chunks)
         except Exception as e:
             logger.error(f"Erro na OpenAI: {str(e)}")
-            raise HTTPException(
-                status_code=502, 
-                detail=f"Falha ao gerar embeddings via OpenAI. Erro original: {str(e)}"
-            )
+            raise HTTPException(status_code=502, detail=f"Falha ao gerar embeddings: {str(e)}")
         
         for i, (text, vector) in enumerate(zip(chunks, embeddings)):
             vector_id = vector_service.add_vector(vector)
-            await mongo_service.save_chunk(doc_id, i, text, vector_id)
+            await mongo_service.save_chunk(doc_id, i, text, vector_id, user_id) # Passando para o Mongo
             
         return {
             "document_id": doc_id,
             "total_chunks": len(chunks),
-            "embedding_model": settings.embedding_model
+            "embedding_model": settings.embedding_model,
+            "user_id": user_id
         }
 
-    async def process_pdf(self, title: str, file_bytes: bytes, source: str):
+    async def process_pdf(self, title: str, file_bytes: bytes, source: str, user_id: str):
         try:
-            # Novo bloco de proteção para blindar o PyMuPDF
-            try:
-                doc = fitz.open(stream=file_bytes, filetype="pdf")
-            except Exception:
-                raise ValueError("O arquivo enviado está corrompido ou não é um PDF válido.")
-                
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
             full_text = ""
             for page in doc:
                 full_text += page.get_text() + "\n"
                 
             if not full_text.strip():
-                raise ValueError("O PDF não possui camada de texto digital. Parecem ser imagens escaneadas.")
+                raise ValueError("O PDF não possui camada de texto digital.")
                 
             logger.info(f"📄 PDF lido com sucesso: {len(full_text)} caracteres extraídos.")
-            return await self.process_document(title=title, content=full_text, source=source)
+            return await self.process_document(title=title, content=full_text, source=source, user_id=user_id)
             
         except ValueError as ve:
-            logger.warning(f"Aviso de conteúdo: {str(ve)}")
             raise HTTPException(status_code=400, detail=str(ve))
         except Exception as e:
-            logger.error(f"Erro inesperado ao ler PDF: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Erro interno ao processar PDF: {str(e)}")
-
+            raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 ingestion_service = IngestionService()

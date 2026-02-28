@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.routers import documents
 from app.routers import questions
 from app.routers import analytics
+from app.routers import auth  # IMPORTANTE: Importando as rotas de autenticação
 
 app = FastAPI(
     title="AI Knowledge Base API",
@@ -9,6 +10,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Adicionando as rotas na aplicação
+app.include_router(auth.router) # IMPORTANTE: Ligando o Auth!
 app.include_router(documents.router) 
 app.include_router(questions.router)
 app.include_router(analytics.router)
