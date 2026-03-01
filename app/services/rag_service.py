@@ -2,6 +2,7 @@ import time
 from app.services.openai_service import openai_service
 from app.services.vector_service import vector_service
 from app.services.mongo_service import mongo_service
+from app.services.reranker_service import reranker_service
 
 class RAGService:
     async def answer_question(self, question: str, top_k: int = 3, session_id: str = None, user_id: str = None):
@@ -10,11 +11,9 @@ class RAGService:
         query_vector = await openai_service.get_embedding(question)
         vector_ids, distances = vector_service.search(query_vector, top_k=top_k)
         
-        # O Mongo agora vai filtrar: só devolve se o dono do chunk for o user_id logado
         chunks = await mongo_service.get_chunks_by_vector_ids(vector_ids, user_id=user_id)
         
         if not chunks:
-            # Trava de Segurança: Se os vetores mais próximos pertencem a outro usuário, negamos a resposta.
             return {
                 "answer": "Não encontrei informações nos seus documentos autorizados para responder a esta pergunta.",
                 "retrieved_chunks": [],
@@ -62,7 +61,7 @@ class RAGService:
             tokens_used=tokens_used,
             latency_ms=latency_ms,
             session_id=session_id,
-            user_id=user_id # Salvando o dono no log
+            user_id=user_id 
         )
         
         return {
@@ -76,27 +75,35 @@ class RAGService:
         start_time = time.time()
         
         query_vector = await openai_service.get_embedding(question)
-        vector_ids, distances = vector_service.search(query_vector, top_k=top_k)
+        vector_ids, _ = vector_service.search(query_vector, top_k=10) 
+        
         chunks = await mongo_service.get_chunks_by_vector_ids(vector_ids, user_id=user_id)
         
         if not chunks:
             yield "Não encontrei informações nos seus documentos autorizados para responder a esta pergunta."
             return
             
+        best_chunks = reranker_service.rerank(query=question, chunks=chunks, top_k=top_k)
+        print("\n--- [DEBUG] O QUE O RE-RANKER ESCOLHEU ---")
+        for i, chunk in enumerate(best_chunks):
+            print(f"[{i+1}] Score: {chunk.get('rerank_score')} | Texto: {chunk['text'][:150]}...")
+        print("-------------------------------------------\n")
+        
         retrieved_data = []
         document_ids = set()
         context_texts = []
         
-        for chunk, score in zip(chunks, distances):
+        for chunk in best_chunks: 
             retrieved_data.append({
                 "chunk_id": str(chunk["_id"]),
                 "text": chunk["text"],
-                "score": float(score)
+                "score": chunk.get("rerank_score", 0.0) 
             })
             document_ids.add(str(chunk["document_id"]))
             context_texts.append(chunk["text"])
             
         contexto_junto = "\n---\n".join(context_texts)
+
         history = await mongo_service.get_recent_history(session_id)
         history_text = ""
         

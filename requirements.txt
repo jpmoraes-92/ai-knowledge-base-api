@@ -7,7 +7,7 @@ pydantic
 pydantic-settings
 openai
 faiss-cpu
-numpy
+numpy<2.0.0
 tiktoken
 PyMuPDF
 python-multipart
@@ -17,3 +17,6 @@ httpx
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==3.2.0
+sentence-transformers==2.5.1
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.1
