@@ -2,6 +2,8 @@ from app.core.database import db
 from bson import ObjectId
 from datetime import datetime, timezone
 
+# Nova feature de risco 
+print("Testando o Codebase Brain")
 class MongoService:
     async def create_document(self, title: str, source: str, total_chunks: int, embedding_model: str, user_id: str) -> str:
         doc = {
